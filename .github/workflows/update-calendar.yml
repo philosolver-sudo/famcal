@@ -1,0 +1,41 @@
+name: Kalenderbild aktualisieren
+
+on:
+  schedule:
+    # Alle 30 Minuten. GitHub kann bei kostenlosen Repos etwas Verspätung
+    # haben (das ist für einen Familienkalender unproblematisch).
+    - cron: "*/30 * * * *"
+  workflow_dispatch: {}  # erlaubt manuelles Auslösen über die GitHub-Oberfläche
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Abhängigkeiten installieren
+        run: pip install -r requirements.txt
+
+      - name: Kalenderbild rendern
+        env:
+          ICS_URLS: ${{ secrets.ICS_URLS }}
+          CALENDAR_NAMES: ${{ vars.CALENDAR_NAMES }}
+          DAYS_AHEAD: ${{ vars.DAYS_AHEAD }}
+          TIMEZONE: "Europe/Berlin"
+          TITLE: "Familienkalender"
+        run: python render_calendar.py
+
+      - name: Bild committen, falls geändert
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/calendar.png
+          git diff --cached --quiet || git commit -m "Kalenderbild aktualisiert"
+          git push
