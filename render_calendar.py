@@ -32,7 +32,7 @@ from zoneinfo import ZoneInfo
 
 ICS_URLS = [u.strip() for u in os.environ.get("ICS_URLS", "").split(",") if u.strip()]
 CALENDAR_NAMES = [n.strip() for n in os.environ.get("CALENDAR_NAMES", "").split(",") if n.strip()]
-DAYS_AHEAD = int(os.environ.get("DAYS_AHEAD", "6"))
+DAYS_AHEAD = int(os.environ.get("DAYS_AHEAD") or 6)
 TZ_NAME = os.environ.get("TIMEZONE", "Europe/Berlin")
 OUT_PATH = os.environ.get("OUT_PATH", "docs/calendar.png")
 TITLE = os.environ.get("TITLE", "Familienkalender")
