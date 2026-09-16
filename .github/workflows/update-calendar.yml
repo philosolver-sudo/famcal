@@ -2,21 +2,28 @@ name: Kalenderbild aktualisieren
 
 on:
   schedule:
-    # Alle 30 Minuten. GitHub kann bei kostenlosen Repos etwas Verspätung
-    # haben (das ist für einen Familienkalender unproblematisch).
+    # Alle 30 Minuten. GitHub kann bei kostenlosen Repos etwas Verspaetung
+    # haben (das ist fuer einen Familienkalender unproblematisch).
     - cron: "*/30 * * * *"
-  workflow_dispatch: {}  # erlaubt manuelles Auslösen über die GitHub-Oberfläche
+  workflow_dispatch: {}  # erlaubt manuelles Ausloesen ueber die GitHub-Oberflaeche
 
+# Nie zwei Laeufe gleichzeitig
 concurrency:
   group: calendar-update
   cancel-in-progress: false
 
+# Rechte fuer die direkte Pages-Veroeffentlichung (kein Commit noetig)
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +31,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Abhängigkeiten installieren
+      - name: Abhaengigkeiten installieren
         run: pip install -r requirements.txt
 
       - name: Kalenderbild rendern
@@ -36,22 +43,18 @@ jobs:
           TITLE: "Familienkalender"
         run: python render_calendar.py
 
-      - name: PNG für Kindle bereinigen (pngcrush)
+      - name: PNG fuer Kindle bereinigen (pngcrush)
         run: |
           sudo apt-get update -y -qq
           sudo apt-get install -y -qq pngcrush
           pngcrush -ow docs/calendar.png
 
-      - name: Bild committen, falls geändert
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/calendar.png
-          if git diff --cached --quiet; then
-            echo "Keine Änderung am Bild."
-          else
-            git commit -m "Kalenderbild aktualisiert"
-            git fetch origin main
-            git rebase origin/main
-            git push
-          fi
+      # Ab hier neu: das Bild wird direkt veroeffentlicht statt committet.
+      - name: Inhalt als Pages-Artefakt verpacken
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - name: Auf GitHub Pages veroeffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4
