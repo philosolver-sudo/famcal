@@ -1,0 +1,20 @@
+name: Keepalive
+
+on:
+  schedule:
+    - cron: "17 3 1 * *"
+  workflow_dispatch: {}
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Workflows aktiv halten
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow enable update-calendar.yml --repo ${{ github.repository }}
+          gh workflow enable keepalive.yml --repo ${{ github.repository }}
